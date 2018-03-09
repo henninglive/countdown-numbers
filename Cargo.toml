@@ -3,5 +3,8 @@ name = "countdown-numbers"
 version = "0.1.0"
 authors = ["Henning Ottesen <henning@live.no>"]
 
+[profile.release]
+panic = "abort"
+
 [dependencies]
 clap = "2.30.0"
