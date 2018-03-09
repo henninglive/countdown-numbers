@@ -22,7 +22,7 @@
 //! ## Algorithm and optimizations
 //! The general approach is to recursively combine terms into a binary
 //! expression tree while continuously testing if an expression is a valid
-//! solution. The rules allow for the flowing optimization:
+//! solution. The rules allow for the following optimization:
 //!
 //! When applying an operator to two terms, we only consider the expression
 //! where the terms are from largest to smallest (5 - 3). This a valid since
@@ -233,10 +233,10 @@ impl Solver {
 }
 
 fn main() {
-    let matches = App::new("Countdown")
+    let matches = App::new("countdown-numbers")
         .version("0.1.0")
         .author("Henning Ottesen <henning@live.no>")
-        .about("Countdown Numbers Solver")
+        .about("Countdown Numbers Game Solver")
         .arg(Arg::with_name("random")
             .short("r")
             .takes_value(true)
@@ -256,7 +256,7 @@ fn main() {
             .number_of_values(1)
             .takes_value(true)
             .value_name("TARGET")
-            .help("The target number")
+            .help("Target number")
         )
         .arg(Arg::with_name("numbers")
             .required_unless_one(&["random", "rules"])
