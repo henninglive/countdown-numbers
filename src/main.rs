@@ -70,11 +70,13 @@ impl PartialEq for Term {
 
 impl Solver {
     fn new(numbers: &[usize], target: usize) -> Solver {
-        let remaining = numbers.iter()
+        let mut remaining = numbers.iter()
             .map(|i| Box::new(Term{
                 expression: None,
                 value: *i,
             })).collect::<Vec<_>>();
+
+        remaining.sort_by(|a, b| a.value.cmp(&b.value).reverse());
 
         Solver {
             remaining: remaining,
@@ -125,9 +127,22 @@ impl Solver {
         }
 
         if self.remaining.len() > 0 {
-            self.remaining.push(c);
+            // Find Insert position so self.remaining remains sorted
+            let pos = {
+                let mut pos = 0;
+                let mut iter = self.remaining.iter();
+                while let Some(k) = iter.next() {
+                    if k.value <= c.value {
+                        break;
+                    }
+                    pos += 1;
+                }
+                pos
+            };
+
+            self.remaining.insert(pos, c);
             self.solve();
-            c = self.remaining.pop().unwrap();
+            c = self.remaining.remove(pos);
         }
         c.expression.unwrap()
     }
@@ -135,7 +150,7 @@ impl Solver {
     fn solve(&mut self) {
         for i in 0..self.remaining.len() {
             let mut a = self.remaining.remove(i);
-            for j in 0..self.remaining.len() {
+            for j in i..self.remaining.len() {
                 let mut expr = (Operator::Addition, a, self.remaining.remove(j));
                 expr = self.try_expr(expr);
 
