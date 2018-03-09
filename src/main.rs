@@ -1,4 +1,36 @@
+//! This program finds all solutions to a numbers round from the popular
+//! British tv show Countdown.
+//!
+//!
+//! ## Rules
+//! The rules of the Countdown Numbers Game are as follow:
+//!
+//! The contestant chooses six numbers from two groups of, 20 small numbers and
+//! 4 large numbers. The numbers consist of two each of numbers 1 through 10.
+//! The 4 large numbers are 25, 50, 75 and 100. The contestant decides how many
+//! large numbers are to be used, from none to all four, the rest will be small
+//! numbers.
+//!
+//! A random three-digit target is generated. The contestants have 30 seconds
+//! to work out a sequence of calculations with the numbers whose final result
+//! is as close to the target number as possible. They may use only the four
+//! basic operations of addition, subtraction, multiplication and division,
+//! and do not have to use all six numbers. Fractions are not allowed, and only
+//! positive integers may be obtained as a result at any stage of the calculation.
+//!
+//!
+//! ## Algorithm and optimizations
+//! The general approach is to recursively combine terms into a binary
+//! expression tree while continuously testing if an expression is a valid
+//! solution. The rules allow for the flowing optimization:
+//!
+//! When applying an operator to two terms, we only consider the expression
+//! where the terms are from largest to smallest (5 - 3). This a valid since
+//! addition and multiplication is commutative, we don’t allow negative
+//! values at any intermediate step, we don’t allow fractions.
+//!
 
+/// The four basic mathematical operations
 #[derive(Debug, Clone, Copy)]
 enum Operator {
     Addition,
@@ -7,19 +39,30 @@ enum Operator {
     Division,
 }
 
+/// Basic mathematical expression with two terms and an operator,
+/// forms a binary expression tree.
 type Expr = (Operator, Box<Term>, Box<Term>);
 
+/// Mathematical Term
 #[derive(Debug, Clone)]
 struct Term {
+    /// Expression used to calculate this term.
     expression: Option<Expr>,
+    /// Integer value of the term
     value: usize,
 }
 
+
+/// Countdown Numbers game solver
 #[derive(Debug)]
 struct Solver {
+    /// Stack of remaining terms
     remaining: Vec<Box<Term>>,
+    /// List of solutions found
     solutions: Vec<Box<Term>>,
+    /// Target number
     target: usize,
+    // Number of expressions evaluated
     counter: usize,
 }
 
@@ -69,6 +112,7 @@ impl PartialEq for Term {
 }
 
 impl Solver {
+    /// Initiate Solver
     fn new(numbers: &[usize], target: usize) -> Solver {
         let mut remaining = numbers.iter()
             .map(|i| Box::new(Term{
@@ -86,7 +130,11 @@ impl Solver {
         }
     }
 
+    /// Test an expression as a solution, then continue combining terms.
     fn try_expr(&mut self, expr: Expr) -> Expr {
+        assert!(expr.1.value >= expr.2.value, "terms vector is not sorted");
+
+        // Calculate expression into new term
         let mut c = Box::new(match expr.0 {
             Operator::Addition => Term {
                 value: expr.1.value + expr.2.value,
@@ -140,6 +188,10 @@ impl Solver {
                 pos
             };
 
+            // Insert new term and continue recursively combining terms.
+            // The stack is returned to its original state after the recursive
+            // call so we can pop our term, deconstruct it and return
+            // the expression when we are done.
             self.remaining.insert(pos, c);
             self.solve();
             c = self.remaining.remove(pos);
@@ -147,6 +199,9 @@ impl Solver {
         c.expression.unwrap()
     }
 
+    /// Finds all valid expressions resulting in the target number.
+    /// Recursively combines two and two terms into a binary expression tree,
+    /// test if it’s a valid solution as we go along.
     fn solve(&mut self) {
         for i in 0..self.remaining.len() {
             let mut a = self.remaining.remove(i);
