@@ -30,6 +30,10 @@
 //! values at any intermediate step, we don’t allow fractions.
 //!
 
+
+extern crate clap;
+use clap::{App, Arg};
+
 /// The four basic mathematical operations
 #[derive(Debug, Clone, Copy)]
 enum Operator {
@@ -227,7 +231,80 @@ impl Solver {
 }
 
 fn main() {
-    let (numbers, target) = ([25, 50, 75, 100, 8, 9].to_vec(), 952);
+    let matches = App::new("Countdown")
+        .version("0.1.0")
+        .author("Henning Ottesen <henning@live.no>")
+        .about("Countdown Numbers Solver")
+        .arg(Arg::with_name("random")
+            .short("r")
+            .display_order(1)
+            .help("Randomly choose the numbers and the target,\n\
+                   overrides provided numbers and target")
+            )
+        .arg(Arg::with_name("rules")
+            .long("rules")
+            .help("Prints the rules of the Countdown Numbers Game")
+        )
+        .arg(Arg::with_name("target")
+            .required_unless_one(&["random", "rules"])
+            .index(1)
+            .number_of_values(1)
+            .takes_value(true)
+            .value_name("TARGET")
+            .help("The target number")
+        )
+        .arg(Arg::with_name("numbers")
+            .required_unless_one(&["random", "rules"])
+            .index(2)
+            .min_values(2)
+            .number_of_values(1)
+            .takes_value(true)
+            .multiple(true)
+            .value_name("NUMBER")
+            .help("Starting numbers, at least two numbers must be provided")
+        )
+        .get_matches();
+
+    if matches.is_present("rules") {
+        println!("The rules of the Countdown Numbers Game are as follow:\n\n\
+
+                  The contestant chooses six numbers from two groups of,\n\
+                  20 small numbers and 4 large numbers. The numbers consist\n\
+                  of two each of numbers 1 through 10. The 4 large numbers\n\
+                  are 25, 50, 75 and 100. The contestant decides how many\n\
+                  large numbers are to be used, from none to all four,\n\
+                  the rest will be small numbers.\n\n\
+
+                  A random three-digit target is generated. The contestants\n\
+                  have 30 seconds to work out a sequence of calculations with\n\
+                  the numbers whose final result is as close to the target\n\
+                  number as possible. They may use only the four basic\n\
+                  operations of addition, subtraction, multiplication and\n\
+                  division, and do not have to use all six numbers.\n\
+                  Fractions are not allowed, and only positive integers may\n\
+                  be obtained as a result at any stage of the calculation.\n\
+                  ");
+        return;
+    }
+
+    let (numbers, target) = if matches.is_present("random") {
+        ([25, 50, 75, 100, 8, 9].to_vec(), 952)
+    } else {
+        let numbers = matches.values_of("numbers")
+            .expect("Numbers arguments are missing")
+            .map(|s| s.parse::<usize>()
+                .expect("A number argument is not a valid number"))
+            .collect::<Vec<usize>>();
+
+        let target = matches.value_of("target")
+            .expect("Target argument is missing")
+            .parse::<usize>()
+            .expect("Target argument is not a valid number");
+
+        assert!(numbers.len() >= 2, "at least two numbers are required");
+
+        (numbers, target)
+    };
 
     // convert numbers to string and join together
     let numbers_str = {
