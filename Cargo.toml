@@ -8,3 +8,4 @@ panic = "abort"
 
 [dependencies]
 clap = "2.30.0"
+rand = "0.4"

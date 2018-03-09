@@ -30,9 +30,11 @@
 //! values at any intermediate step, we don’t allow fractions.
 //!
 
-
+extern crate rand;
 extern crate clap;
+
 use clap::{App, Arg};
+use rand::Rng;
 
 /// The four basic mathematical operations
 #[derive(Debug, Clone, Copy)]
@@ -237,9 +239,12 @@ fn main() {
         .about("Countdown Numbers Solver")
         .arg(Arg::with_name("random")
             .short("r")
+            .takes_value(true)
             .display_order(1)
+            .value_name("NUM_BIG_NUMS")
             .help("Randomly choose the numbers and the target,\n\
-                   overrides provided numbers and target")
+                   overrides provided numbers and target.\n\
+                   Takes number of big numbers as value, from 0 to 4.")
             )
         .arg(Arg::with_name("rules")
             .long("rules")
@@ -287,23 +292,40 @@ fn main() {
         return;
     }
 
-    let (numbers, target) = if matches.is_present("random") {
-        ([25, 50, 75, 100, 8, 9].to_vec(), 952)
-    } else {
-        let numbers = matches.values_of("numbers")
-            .expect("Numbers arguments are missing")
-            .map(|s| s.parse::<usize>()
-                .expect("A number argument is not a valid number"))
-            .collect::<Vec<usize>>();
+    let (numbers, target) = match matches.value_of("random")
+        .map(|s| s.parse::<usize>().expect("Number of big numbers is not a number"))
+    {
+        Some(num_big) => {
+            assert!(num_big <= 4, "Number of big numbers must not be more then 4");
 
-        let target = matches.value_of("target")
-            .expect("Target argument is missing")
-            .parse::<usize>()
-            .expect("Target argument is not a valid number");
+            let mut small = (1usize..11).flat_map(|i| vec![i, i]).collect::<Vec<_>>();
+            let mut big = vec![100, 75, 50, 25];
 
-        assert!(numbers.len() >= 2, "at least two numbers are required");
+            let mut rng = rand::thread_rng();
 
-        (numbers, target)
+            rng.shuffle(&mut small[..]);
+            rng.shuffle(&mut big[..]);
+
+            let target = rng.gen_range(101, 1000);
+            (big.into_iter().take(num_big)
+                .chain(small.into_iter().take(6 - num_big)).collect(), target)
+        },
+        None => {
+            let numbers = matches.values_of("numbers")
+                .expect("Numbers arguments are missing")
+                .map(|s| s.parse::<usize>()
+                    .expect("A number argument is not a valid number"))
+                .collect::<Vec<usize>>();
+
+            let target = matches.value_of("target")
+                .expect("Target argument is missing")
+                .parse::<usize>()
+                .expect("Target argument is not a valid number");
+
+            assert!(numbers.len() >= 2, "at least two numbers are required");
+
+            (numbers, target)
+        }
     };
 
     // convert numbers to string and join together
